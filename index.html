@@ -388,12 +388,12 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer);
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, moonVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-        posx += 0.1*dirx;
-        if(posx > 0.5) {
-            posx = 0.5;
+        posx += 0.01*dirx;
+        if(posx > 1.0) {
+            posx = 1.0;
             dirx = -1;
-        } else if(posx < -0.5) {
-            posx = -0.5;
+        } else if(posx < -1.0) {
+            posx = -1.0;
             dirx = 1;
         }
     }
