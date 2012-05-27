@@ -370,7 +370,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         //mat4.translate(mvMatrix, [0, 0, -6]);
         mat4.translate(mvMatrix, [posx, 0, -6]);
 
-        mat4.multiply(mvMatrix, moonRotationMatrix);
+        //mat4.multiply(mvMatrix, moonRotationMatrix);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, moonTexture);
