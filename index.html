@@ -204,7 +204,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
     function degToRad(degrees) {
         return degrees * Math.PI / 180;
     }
-    /*
+    
     var mouseDown = false;
     var lastMouseX = null;
     var lastMouseY = null;
@@ -244,7 +244,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         lastMouseX = newX
         lastMouseY = newY;
     }
-    */
+    
 
 
     var moonVertexPositionBuffer;
@@ -403,11 +403,11 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
 
-        /*
+        
         canvas.onmousedown = handleMouseDown;
         document.onmouseup = handleMouseUp;
         document.onmousemove = handleMouseMove;
-        */
+        
 
         tick();
     }
