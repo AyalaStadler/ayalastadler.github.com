@@ -205,6 +205,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         return degrees * Math.PI / 180;
     }
     
+    /*
     var mouseDown = false;
     var lastMouseX = null;
     var lastMouseY = null;
@@ -244,8 +245,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         lastMouseX = newX
         lastMouseY = newY;
     }
-    
-
+    */
 
     var moonVertexPositionBuffer;
     var moonVertexNormalBuffer;
@@ -364,7 +364,8 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
 
         mat4.identity(mvMatrix);
 
-        mat4.translate(mvMatrix, [0, 0, -6]);
+        //mat4.translate(mvMatrix, [0, 0, -6]);
+        mat4.translate(mvMatrix, [5, 0, -6]);
 
         mat4.multiply(mvMatrix, moonRotationMatrix);
 
@@ -403,11 +404,11 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
 
-        
+        /*
         canvas.onmousedown = handleMouseDown;
         document.onmouseup = handleMouseUp;
         document.onmousemove = handleMouseMove;
-        
+        */
 
         tick();
     }
