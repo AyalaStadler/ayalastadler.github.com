@@ -260,10 +260,10 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         gl.drawElements(gl.TRIANGLES, sphereVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     }
 
-    function Sphere() {
+    function Sphere(x, y) {
         this.radius = 0.5;
         this.randomCol();
-        this.randomPos();
+        this.randomPos(x,y);
         this.randomVel();
     }
 
@@ -274,9 +274,9 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         this.a = 1.0;
     }
 
-    Sphere.prototype.randomPos = function () {
-        this.posX = 0.0;
-        this.posY = 0.0;
+    Sphere.prototype.randomPos = function (x,y) {
+        this.posX = x;
+        this.posY = y;
     }
 
     Sphere.prototype.randomVel = function () {
@@ -307,7 +307,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         }
 
         // sphere-to-sphere check
-        //collision_check( num );
+        collision_check( num );
 
         mat4.translate(mvMatrix, [this.posX, this.posY, -6]);
         gl.uniform4f(shaderProgram.colorUniform, this.r, this.b, this.g, 1.0);
@@ -321,8 +321,9 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         for( var i in allSpheres) {
             if(i != num) {
                 //alert("checking")
-                if((Math.abs(allSpheres[num].posX - allSpheres[i].posX) < 1.0) ||
-                    (Math.abs(allSpheres[num].posY - allSpheres[i].posY) < 1.0)){
+                var x = Math.abs(allSpheres[num].posX-allSpheres[i].posX);
+                var y = Math.abs(allSpheres[num].posY-allSpheres[i].posY);
+                if( Math.sqrt( x*x + y*y) < allSpheres[num].radius + allSpheres[i].radius ){
                     //alert("collision")
                     // collision detection
                     poor_collision_response(num, i);
@@ -333,7 +334,6 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
 
     // very bad collision response
     function poor_collision_response( s, t ){
-        //alert("response")
         allSpheres[s].velX *= -1;
         allSpheres[s].velY *= -1;
         allSpheres[t].velX *= -1;
@@ -342,9 +342,11 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
 
     var allSpheres = [];
     function initSpheres() {
-        var numberOfSpheres = 3;
+        var numberOfSpheres = 2;
+        var j = 1;
         for (var i=0; i < numberOfSpheres; i++) {
-            allSpheres.push(new Sphere());
+            allSpheres.push(new Sphere(j,j));
+            j -= 2;
         }    
     }
 
