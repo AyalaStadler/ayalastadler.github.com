@@ -13,21 +13,20 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
 
-    varying vec4 vColor;
+    uniform vec4 uColor;
 
     varying vec3 vLightWeighting;
 
     uniform sampler2D uSampler;
 
     void main(void) {
-        gl_FragColor = vec4(vColor.rgb * vLightWeighting, vColor.a);
+        gl_FragColor = vec4(uColor.rgb * vLightWeighting, uColor.a);
     }
 </script>
 
 <script id="shader-vs" type="x-shader/x-vertex">
     attribute vec3 aVertexPosition;
     attribute vec3 aVertexNormal;
-    attribute vec4 aVertexColor;
 
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
@@ -40,13 +39,10 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
 
     uniform bool uUseLighting;
 
-    varying vec4 vColor;
-
     varying vec3 vLightWeighting;
 
     void main(void) {
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-        vColor = aVertexColor;
 
         if (!uUseLighting) {
             vLightWeighting = vec3(1.0, 1.0, 1.0);
@@ -132,9 +128,6 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
         gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
-        gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
-
         shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
         gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
 
@@ -146,6 +139,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram, "uAmbientColor");
         shaderProgram.lightingDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightingDirection");
         shaderProgram.directionalColorUniform = gl.getUniformLocation(shaderProgram, "uDirectionalColor");
+        shaderProgram.colorUniform = gl.getUniformLocation(shaderProgram, "uColor");
     }
 
     var mvMatrix = mat4.create();
@@ -180,10 +174,10 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         return degrees * Math.PI / 180;
     }
 
-    var moonVertexPositionBuffer;
-    var moonVertexNormalBuffer;
-    var moonVertexIndexBuffer;
-    var moonVertexColorBuffer;
+    var sphereVertexPositionBuffer;
+    var sphereVertexNormalBuffer;
+    var sphereVertexIndexBuffer; // keeps track of indices in triangles
+    var sphereVertexColorBuffer;
 
     function initBuffers() {
         var latitudeBands = 30;
@@ -192,7 +186,6 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
 
         var vertexPositionData = [];
         var normalData = [];
-        var colors = [];
         for (var latNumber=0; latNumber <= latitudeBands; latNumber++) {
             var theta = latNumber * Math.PI / latitudeBands;
             var sinTheta = Math.sin(theta);
@@ -208,9 +201,6 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
                 var z = sinPhi * sinTheta;
                 var u = 1 - (longNumber / longitudeBands);
                 var v = 1 - (latNumber / latitudeBands);
-
-                // red sphere
-                colors = colors.concat([1.0, 0.0, 0.0, 1.0]);
 
                 normalData.push(x);
                 normalData.push(y);
@@ -236,36 +226,127 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
             }
         }
 
-        moonVertexNormalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer);
+        sphereVertexNormalBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, sphereVertexNormalBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
-        moonVertexNormalBuffer.itemSize = 3;
-        moonVertexNormalBuffer.numItems = normalData.length / 3;
+        sphereVertexNormalBuffer.itemSize = 3;
+        sphereVertexNormalBuffer.numItems = normalData.length / 3;
 
-        moonVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer);
+        sphereVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, sphereVertexPositionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
-        moonVertexPositionBuffer.itemSize = 3;
-        moonVertexPositionBuffer.numItems = vertexPositionData.length / 3;
+        sphereVertexPositionBuffer.itemSize = 3;
+        sphereVertexPositionBuffer.numItems = vertexPositionData.length / 3;
 
-        moonVertexColorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexColorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-        moonVertexColorBuffer.itemSize = 4;
-        moonVertexColorBuffer.numItems = latNumber*longNumber;
-
-        moonVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer);
+        sphereVertexIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sphereVertexIndexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
-        moonVertexIndexBuffer.itemSize = 1;
-        moonVertexIndexBuffer.numItems = indexData.length;
+        sphereVertexIndexBuffer.itemSize = 1;
+        sphereVertexIndexBuffer.numItems = indexData.length;
     }
 
+    function drawSphere() {
+        gl.bindBuffer(gl.ARRAY_BUFFER, sphereVertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, sphereVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    var posx = 0;
-    var dirx = 1;
-    var posy = 0;
-    var diry = -1;
+        gl.bindBuffer(gl.ARRAY_BUFFER, sphereVertexNormalBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, sphereVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        //gl.bindBuffer(gl.ARRAY_BUFFER, sphereVertexColorBuffer);
+        //gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, sphereVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sphereVertexIndexBuffer);
+        setMatrixUniforms();
+        gl.drawElements(gl.TRIANGLES, sphereVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    }
+
+    function Sphere() {
+        this.radius = 0.5;
+        this.randomCol();
+        this.randomPos();
+        this.randomVel();
+    }
+
+    Sphere.prototype.randomCol = function () {
+        this.r = Math.random();
+        this.g = Math.random();
+        this.b = Math.random();
+        this.a = 1.0;
+    }
+
+    Sphere.prototype.randomPos = function () {
+        this.posX = 0.0;
+        this.posY = 0.0;
+    }
+
+    Sphere.prototype.randomVel = function () {
+        this.velX = (Math.random() % 5) / 5;
+        this.velY = (Math.random() % 5) / 5;
+    }
+
+    Sphere.prototype.draw = function ( num ) {
+        mvPushMatrix();
+        
+        // sphere-to-wall check
+        this.posX += this.velX;
+        if(this.posX > 2.0) { 
+            this.posX = 2.0;
+            this.velX *= (this.velX > 0) ? -1 : 1;
+        } else if (this.posX < -2.0){
+            this.posX = -2.0;
+            this.velX *= (this.velX < 0) ? -1 : 1;
+        }
+
+        this.posY += this.velY;
+        if(this.posY > 2.0) {
+            this.posY = 2.0;
+            this.velY *= (this.velY > 0) ? -1: 1;
+        } else if(this.posY < -2.0) {
+            this.posY = -2.0;
+            this.velY *= (this.velY < 0) ? -1 : 1;
+        }
+
+        // sphere-to-sphere check
+        //collision_check( num );
+
+        mat4.translate(mvMatrix, [this.posX, this.posY, -6]);
+        gl.uniform4f(shaderProgram.colorUniform, this.r, this.b, this.g, 1.0);
+        drawSphere();
+
+        mvPopMatrix();
+    }
+
+    // collision detection
+    function collision_check (num) {
+        for( var i in allSpheres) {
+            if(i != num) {
+                //alert("checking")
+                if((Math.abs(allSpheres[num].posX - allSpheres[i].posX) < 1.0) ||
+                    (Math.abs(allSpheres[num].posY - allSpheres[i].posY) < 1.0)){
+                    //alert("collision")
+                    // collision detection
+                    poor_collision_response(num, i);
+                }
+            }
+        }
+    }
+
+    // very bad collision response
+    function poor_collision_response( s, t ){
+        //alert("response")
+        allSpheres[s].velX *= -1;
+        allSpheres[s].velY *= -1;
+        allSpheres[t].velX *= -1;
+        allSpheres[t].velY *= -1;
+    }
+
+    var allSpheres = [];
+    function initSpheres() {
+        var numberOfSpheres = 3;
+        for (var i=0; i < numberOfSpheres; i++) {
+            allSpheres.push(new Sphere());
+        }    
+    }
 
     function drawScene() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight); // tells webgl the size of the canvas
@@ -299,42 +380,10 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
 
         mat4.identity(mvMatrix);
 
-        //mat4.translate(mvMatrix, [0, 0, -6]);
-        //mat4.translate(mvMatrix, [posx, 0, -6]);
-        mat4.translate(mvMatrix, [posx, posy, -6]);
-
-        //mat4.multiply(mvMatrix, moonRotationMatrix);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, moonVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, moonVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexColorBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, moonVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer);
-        setMatrixUniforms();
-        gl.drawElements(gl.TRIANGLES, moonVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-        posx += 0.05*dirx;
-        if(posx > 2.0) {
-            posx = 2.0;
-            dirx = -1;
-        } else if(posx < -2.0) {
-            posx = -2.0;
-            dirx = 1;
-        }
-        posy += 0.03*diry;
-        if(posy > 2.0) {
-            posy = 2.0;
-            diry = -1;
-        } else if(posy < -2.0) {
-            posy = -2.0;
-            diry = 1;
+        for( var i in allSpheres) {
+            allSpheres[i].draw( i );
         }
     }
-
 
     function tick() {
         requestAnimFrame(tick);
@@ -347,6 +396,7 @@ Modified Example from http://learningwebgl.com/lessons/lesson11/index.html
         initGL(canvas);
         initShaders();
         initBuffers();
+        initSpheres();
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
